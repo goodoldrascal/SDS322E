@@ -1,0 +1,141 @@
+---
+title: "Project 2 Report"
+output: html_document
+---
+
+## Group Members
+
+Specify the names and EIDs of all group members:
+
+
+
+## Question
+
+State the question being addressed and describe the outcome variable to be predicted. Explain why it is useful to answer this question.
+
+**Write your answer here.**
+
+
+## Data and Setup
+
+Load the dataset into R below. In addition, load any packages that you will need using the `library()` function. For example, you will need to load the `tidyverse` and `tidymodels` packages.
+
+
+```{r}
+## Add your code for reading in the data here
+
+## If the dataset is too large for your computer to handle, you can draw a
+## smaller random sub-sample of the data using the `sample_n()` function. For
+## example 
+##
+## dat_sub <- sample_n(dat, 50000) 
+## 
+## draws a random sample of 50,000 rows from the `dat` object.
+
+
+
+```
+
+
+## Base Prediction Model
+
+Use either linear regression (for a continuous outcome) or logistic regression (for a binary outcome) to build a base prediction model. Use the tidymodels framework to 
+
+1. Split the dataset into a training and testing dataset using 75% of observations for training and 25% for testing; leave the test dataset aside for now.
+
+2. Select variables to include in your model recipe. You may need to experiment with different variable combinations to find the best predicting model.
+
+Use 10-fold cross-validation on the training data to estimate either 
+
+* the root mean squared error (RMSE) if your outcome is continuous; or 
+* the accuracy if your outcome is binary.
+
+
+```{r}
+## Add your code here
+
+```
+
+Which configuration of variables in your model seems to produce the best performing model on the training data?
+
+**Write your answer here.**
+
+
+
+## Alternate Prediction Model
+
+For this part of the analysis, choose one machine learning approach to build an alternate prediction model. The ones we have seen in class are K-Nearest Neighbors (`nearest_neighbor()`), decision trees (`decision_tree()`), and random forests (`rand_forest()`). 
+
+1. Identify the tuning parameters for your chosen model.
+
+2. Explore which combination of variables and tuning parameters produces good model performance.
+
+3. Create a workflow that assembles your recipe and your model specification.
+
+4. Use 10-fold cross-validation to estimate either the RMSE (continuous outcome) or the accuracy (binary outcome) for your model in the training data.
+
+5. Tune your model using a range of possible tuning parameters to identify the best-predicting model.
+
+NOTE: Doing the cross-validation and model tuning here may take a *significant* amount of time depending on your choice of tuning parameters and the speed of your computer. You may need to be patient with the process here.
+
+
+```{r}
+## Add your code here
+
+```
+
+Which one of your models (i.e., which combination of tuning parameters and variables) produces the best prediction performance on the training dataset?
+
+**Write your answer here.**
+
+
+## Final Model Fit
+
+Choose the model that performs the best on your training dataset (either the linear/logistic regression or the machine learning model). Make a final assessment of your model using the testing dataset.
+
+
+```{r}
+## Add your code here
+
+```
+
+
+What are the final performance metrics for your best model?
+
+**Write your answer here.**
+
+
+
+## Model Improvement
+
+Suppose you had the ability to improve the fit of the model by collecting data on a new variable. What data would you most like to collect to improve the prediction performance of the model? Explain why you think collecting this new variable would improve the prediction performance. You may optionally include some code/analysis to support your explanation.
+
+```{r}
+## Optional: Add any supporting code here
+
+```
+
+**Write your answer here.**
+
+
+
+
+## Discussion
+
+Reflect on the process of conducting this project.
+
+What was challenging?
+
+What have you learned from the process itself?
+
+Was there anything that was unexpected that you found during this analysis? If so, what was your expectation and how did the experience deviate from your expectation?
+
+**Write your answer here.**
+
+
+
+
+
+## Submission to Gradescope
+
+**Make sure to add your group members to the Gradescope submission!**

@@ -1,0 +1,50 @@
+---
+title: "Project 2 Preliminary Report"
+output: html_document
+---
+
+## Group Members
+
+Specify the names and EIDs of all group members:
+
+
+
+## Dataset
+
+Identify the dataset you plan to work with:
+
+
+
+## Question
+
+Specify the question you plan to ask/answer with this dataset:
+
+
+
+## Outcome Variable
+
+What is the outcome variable in your dataset that you will be predicting? **For the purposes of this project, the outcome should either be continuous or binary**.
+
+
+
+## Outcome Summary
+
+Provide a summary plot of the outcome variable. For example, if it is a continuous variable, show a histogram or a boxplot. If it is a binary variable, show a barplot.
+
+
+
+```{r}
+library(tidyverse)
+
+## Add your code here
+
+
+
+```
+
+
+
+
+## Submission to Gradescope
+
+**Make sure to add your group members to the Gradescope submission!**
