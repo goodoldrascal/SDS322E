@@ -31,9 +31,27 @@ Load the dataset into R below. In addition, load any packages that you will need
 ## dat_sub <- sample_n(dat, 50000) 
 ## 
 ## draws a random sample of 50,000 rows from the `dat` object.
-
-
-
+library(future)
+plan(multisession, workers = 8)
+library(tidyverse)
+library(readr)
+library(tidymodels)
+df <- read_csv("~/projects/Project2/Austin_Crash_Report_Data_-_Crash_Level_Records_20250407.csv.gz")
+# df <- Austin_Crash_Report_Data_._Crash_Level_Records_20250407.csv
+df <- df |> 
+  mutate(injury = factor(tot_injry_cnt > 0, levels = c(FALSE, TRUE), labels = c("no_injury", "injury"))) |> 
+  relocate(injury, .before = 1)
+df |>
+  select(tot_injry_cnt) |>
+  ggplot(aes(x = tot_injry_cnt)) +
+  geom_bar() +
+  labs(
+    title = "Injury Indicator",
+    x = "Injury (TRUE/FALSE)",
+    y = "Count"
+  ) +
+  theme_minimal()
+colnames(df)
 ```
 
 
@@ -53,6 +71,40 @@ Use 10-fold cross-validation on the training data to estimate either
 
 ```{r}
 ## Add your code here
+set.seed(119)
+df <- df |> 
+  mutate(
+    onsys_fl = factor(onsys_fl),
+    private_dr_fl = factor(private_dr_fl)
+  )
+
+df <- df |>
+  mutate(
+    crash_time = lubridate::mdy_hms(`Crash timestamp (US/Central)`),
+    hour  = lubridate::hour(crash_time),
+    wday  = lubridate::wday(crash_time, label = TRUE),
+    month = lubridate::month(crash_time, label = TRUE)
+  )
+
+
+df_split <- initial_split(df, prop = 0.25)
+train <- training(df_split)
+test  <- testing(df_split)
+summary(train |> select(latitude, longitude, crash_speed_limit, onsys_fl, private_dr_fl))
+
+rec <- recipe(injury ~ latitude + longitude + crash_speed_limit + onsys_fl + units_involved  + road_constr_zone_fl + hour + wday + month, data = train)
+model <- logistic_reg() |>
+  set_engine("glm")
+
+wf <- workflow() |>
+  add_recipe(rec) |>
+  add_model(model)
+
+folds <- vfold_cv(train, v = 10)
+
+res <- fit_resamples(wf, resamples = folds)
+
+res |> collect_metrics()
 
 ```
 
@@ -80,8 +132,49 @@ NOTE: Doing the cross-validation and model tuning here may take a *significant* 
 
 
 ```{r}
-## Add your code here
+## Recipe (cleaned: NO crash_time)
+rec2 <- recipe(
+  injury ~ latitude + longitude + crash_speed_limit +
+           onsys_fl + units_involved + road_constr_zone_fl +
+           hour + wday + month,
+  data = train
+)
 
+## Random forest model
+model <- rand_forest(
+  mtry = tune(),
+  min_n = tune(),
+  trees = 1000
+) |>
+  set_engine("ranger", importance = "impurity") |>
+  set_mode("classification")
+
+## Workflow
+wf <- workflow() |>
+  add_recipe(rec2) |>
+  add_model(model)
+
+## CV folds
+folds <- vfold_cv(train, v = 10)
+
+## Tuning grid
+grid <- grid_regular(
+  mtry(range = c(2, 8)),
+  min_n(range = c(2, 20)),
+  levels = 5
+)
+
+## Tune
+res <- tune_grid(
+  wf,
+  resamples = folds,
+  grid = grid,
+  metrics = metric_set(roc_auc)
+)
+
+## Select best RF config
+best_res <- res |> select_best("roc_auc")
+best_res
 ```
 
 Which one of your models (i.e., which combination of tuning parameters and variables) produces the best prediction performance on the training dataset?

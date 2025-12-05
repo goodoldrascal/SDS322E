@@ -1,0 +1,63 @@
+---
+title: "Propensity Score Matching"
+output: html_document
+date: "2025-11-21"
+---
+
+# Exercise 1
+Load the `tidyverse`. Install and load `MatchIt`.
+```{r}
+# Your code goes here
+library(tidyverse)
+library(MatchIt)
+
+```
+
+# Exercise 2
+In this worksheet, we will use some data simulated by Dr. Andrew Heiss. The data is about mosquito nets and malaria. 
+
+Start by visiting the link, to read more about the data: https://evalsp21.classes.andrewheiss.com/example/matching-ipw/#program-background. Specifically, start by reading the first paragraph under "Program Background" and answer the following questions:
+
+1. In this simulation, do the data come from a randomized controlled trial (RCT) or an observational study? **Observational study**
+
+2. What is the intervention of interest? **Mosquito net**
+
+3. What is outcome of interest? **Malaria risk**
+
+Run the code below to load the simulated data.
+```{r}
+# Import the data
+nets <- read_csv("https://evalsp21.classes.andrewheiss.com/data/mosquito_nets.csv")
+```
+
+# Exercise 3
+Using the `matchit()` function, fit a propensity score model. The outcome will be the intervention you identified above. The predictors will be the following confounders: `income`, `temperature`, and `health`.
+```{r}
+# Your code goes here
+pfit <- matchit(net ~ income + temperature + health, data = nets)
+
+```
+
+# Exercise 4
+Run the code below to view the model summary and then answer the following questions. (Hint: you can click on the different pictures below the code chunk to see different parts of the summary, or you can copy and paste `summary(pfit)` into your console and run it there, to see all the output at once.)
+
+1. What were the mean incomes for the control group in the full dataset and the matched dataset?
+
+2. Were the standardized mean differences for the covariates smaller in the matched dataset compared to full dataset?
+
+3. When using the matched dataset, how many observations will be used to estimate the effect of mosquito nets on malaria risk?
+```{r}
+# View the model summary
+summary(pfit)
+```
+
+# Exercise 5
+Now create the matched dataset using `match.data()`. Then using that dataset, fit a linear regression model with `lm()` to estimate the effect of mosquito nets on malaria risk.
+
+Interpret the coefficient for `netTRUE`.
+```{r}
+# Your code goes here
+mdat <- match.data(pfit)
+fit <- lm(malaria_risk ~ net, data = mdat)
+```
+

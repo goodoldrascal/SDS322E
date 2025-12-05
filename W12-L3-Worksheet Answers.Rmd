@@ -1,0 +1,106 @@
+---
+title: "Random Forests"
+output: html_document
+date: "2025-11-14"
+---
+
+# Exercise 1
+Load `tidymodels`. Install and load `ranger`.
+```{r}
+# Your code goes here
+library(tidymodels)
+library(ranger)
+
+```
+
+Run this code, to prepare the data.
+```{r}
+set.seed(1114)
+
+## Remove rows with missing values
+penguins <- penguins |> 
+  drop_na()
+
+## Split the data
+split <- initial_split(penguins, prop = 0.7)
+train <- training(split)
+test <- testing(split)
+```
+
+# Exercise 2
+In this worksheet, we will use random forests to try to predict `sex` based on all other variables in the dataset. Your next task is to create the recipe.
+```{r}
+## Create the recipe
+rec <- train |> 
+  recipe(sex ~ .)
+```
+
+# Exercise 3
+1. Set the engine.
+
+2. Is this a regression or classification problem? Set the mode accordingly.
+
+3. Add the `mtry` argument in `rand_forest()`, so that three variables are sampled at each split point.
+
+4. Set up the tuning parameter `min_n` in `rand_forest()`, so that we can tune it in a later step.
+
+Once you have completed steps 1-4, create the workflow by running the code.
+```{r}
+## Create the model
+model <- rand_forest(mtry = 3, min_n = tune()) |>
+  set_engine("ranger") |>
+  set_mode("classification")
+
+## Create the workflow
+wf <- workflow() |>
+  add_recipe(rec) |>
+  add_model(model)
+```
+
+# Exercise 4
+1. Based on what you see in the `vfold_cv()` code, how many folds will the training data be divided into? Approximately how many observations will be in each fold? **10 folds, each with around 23 observations**
+
+2. For the `min_n` tuning parameter, we want to consider minimum node sizes of 5 to 20 observations. Edit the code inside of `grid_regular()` so that it is ready for tuning. 
+```{r}
+## Set-up cross-validation for tuning
+folds <- vfold_cv(train, v = 10)
+
+## Prepare the tuning parameter values 
+min_n_grid <- grid_regular(min_n(range = c(5, 20)), levels = 16)
+```
+
+# Exercise 5
+1. Given our outcome variable, which metric should we use: RMSE or accuracy? Fill in your answer in the code below.
+
+2. What is the best minimum node size?
+```{r}
+## Run cross validation for the different tuning parameters
+res <- wf |>
+  tune_grid(resamples = folds, grid = min_n_grid)
+
+## Get the best result
+best_res <- res |>
+  select_best(metric = "accuracy")
+```
+
+# Exercise 6
+1. What was the accuracy of the model, when predicting on the test set?
+
+2. How many observations were misclassified?
+```{r}
+## Fit model with best minimum node size, then predict on the test set
+finalize_workflow(wf, best_res) |>
+  fit(data = train) |>
+  augment(new_data = test) |>
+  metrics(truth = sex, estimate = .pred_class)
+```
+
+# Challenge exercise!
+Let's say that instead of tuning `min_n`, we tuned `trees`. Below is the code used to define the tuning parameter values. Then, 10-fold cross-validation was used to find the best value for `trees`. How many decision trees in total were fit to find the best value?
+```{r}
+## Tuning parameter values for trees
+trees_grid <- grid_regular(trees(range = c(100, 1000)), levels = 10)
+```
+
+
+
