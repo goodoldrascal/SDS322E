@@ -42,8 +42,8 @@ df <- df |>
   mutate(injury = factor(tot_injry_cnt > 0, levels = c(FALSE, TRUE), labels = c("no_injury", "injury"))) |> 
   relocate(injury, .before = 1)
 df |>
-  select(tot_injry_cnt) |>
-  ggplot(aes(x = tot_injry_cnt)) +
+  select(injury) |>
+  ggplot(aes(x = injury)) +
   geom_bar() +
   labs(
     title = "Injury Indicator",
@@ -87,7 +87,7 @@ df <- df |>
   )
 
 
-df_split <- initial_split(df, prop = 0.25)
+df_split <- initial_split(df, prop = 0.75)
 train <- training(df_split)
 test  <- testing(df_split)
 summary(train |> select(latitude, longitude, crash_speed_limit, onsys_fl, private_dr_fl))
@@ -103,6 +103,8 @@ wf <- workflow() |>
 folds <- vfold_cv(train, v = 10)
 
 res <- fit_resamples(wf, resamples = folds)
+
+
 
 res |> collect_metrics()
 
@@ -132,6 +134,9 @@ NOTE: Doing the cross-validation and model tuning here may take a *significant* 
 
 
 ```{r}
+library(tidymodels)
+library(ranger)
+
 ## Recipe (cleaned: NO crash_time)
 rec2 <- recipe(
   injury ~ latitude + longitude + crash_speed_limit +
@@ -145,36 +150,37 @@ model <- rand_forest(
   mtry = tune(),
   min_n = tune(),
   trees = 1000
-) |>
-  set_engine("ranger", importance = "impurity") |>
+) %>%
+  set_engine("ranger", importance = "impurity") %>%
   set_mode("classification")
 
 ## Workflow
-wf <- workflow() |>
-  add_recipe(rec2) |>
+wf <- workflow() %>%
+  add_recipe(rec2) %>%
   add_model(model)
 
-## CV folds
+## CV folds (not used now but not harmful)
 folds <- vfold_cv(train, v = 10)
 
-## Tuning grid
-grid <- grid_regular(
-  mtry(range = c(2, 8)),
-  min_n(range = c(2, 20)),
-  levels = 5
-)
+## Load previously saved tuning results
+res2 <- readRDS("/stor/scratch/WCAAR/rhyan_scratch/rf_tuning_output/tuning_results.rds")
 
-## Tune
-res <- tune_grid(
-  wf,
-  resamples = folds,
-  grid = grid,
-  metrics = metric_set(roc_auc)
-)
-
-## Select best RF config
-best_res <- res |> select_best("roc_auc")
+## Select the best RF hyperparameter configuration
+best_res <- select_best(res2, metric = "roc_auc")
 best_res
+
+## Finalize workflow with optimal tuning params
+final_wf <- finalize_workflow(wf, best_res)
+
+## Fit the finalized RF to the *full training data*
+final_fit <- fit(final_wf, train)
+
+preds <- predict(final_fit, test, type = "prob") %>%
+  bind_cols(test)
+
+roc_auc(preds, truth = injury, .pred_injury)
+
+collect_metrics(res2)
 ```
 
 Which one of your models (i.e., which combination of tuning parameters and variables) produces the best prediction performance on the training dataset?
