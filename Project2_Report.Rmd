@@ -36,8 +36,7 @@ plan(multisession, workers = 8)
 library(tidyverse)
 library(readr)
 library(tidymodels)
-library(readr)
-df <- read_csv("~/projects/Project2/Austin_Crash_Report_Data_-_Crash_Level_Records_20250407.csv.gz")
+df <- read_csv("Austin_Crash_Report_Data_-_Crash_Level_Records_20250407.csv.gz")
 # df <- Austin_Crash_Report_Data_._Crash_Level_Records_20250407.csv
 df <- df |> 
   mutate(injury = factor(tot_injry_cnt > 0, levels = c(FALSE, TRUE), labels = c("no_injury", "injury"))) |> 
@@ -53,6 +52,9 @@ df |>
   ) +
   theme_minimal()
 colnames(df)
+```
+```{r}
+head(df)
 ```
 
 
@@ -87,13 +89,25 @@ df <- df |>
     month = lubridate::month(crash_time, label = TRUE)
   )
 
+head(df)
+```
+
+
+```{r}
+
+
 
 df_split <- initial_split(df, prop = 0.75)
 train <- training(df_split)
 test  <- testing(df_split)
 
-
-rec <- recipe(injury ~ latitude + longitude + crash_speed_limit + onsys_fl + units_involved  + road_constr_zone_fl + hour + wday + month, data = train)
+## Recipe (cleaned: NO crash_time)
+rec <- recipe(
+  injury ~ latitude + longitude + crash_speed_limit +
+           onsys_fl + road_constr_zone_fl +
+           hour + wday + month,
+  data = train
+)
 model <- logistic_reg() |>
   set_engine("glm")
 
@@ -117,7 +131,7 @@ log_metrics
 
 Which configuration of variables in your model seems to produce the best performing model on the training data?
 
-**Write your answer here.**
+**We found that through trying out a mixture of the variables that made the most sense to us, there was miniscule change in the performance of the model overall. The variables we ended up using most recently were latitude, longitude, crash speed limit, onsys_fl, road_constr_zone_fl, hour, wday, month**
 
 
 
@@ -137,18 +151,24 @@ For this part of the analysis, choose one machine learning approach to build an 
 
 NOTE: Doing the cross-validation and model tuning here may take a *significant* amount of time depending on your choice of tuning parameters and the speed of your computer. You may need to be patient with the process here.
 
+```{r}
+library(vip)
+
+## Perform feature importance to determine what variables to include for final model
+rf_fit <- rand_forest(mode = "classification") |>
+  set_engine("ranger", importance = "impurity") |>
+  fit(injury ~ latitude + longitude + crash_speed_limit +
+           onsys_fl + units_involved + road_constr_zone_fl +
+           hour + wday + month, data = train)
+
+vip(rf_fit)
+```
+
 
 ```{r}
 library(tidymodels)
 library(ranger)
 
-## Recipe (cleaned: NO crash_time)
-rec2 <- recipe(
-  injury ~ latitude + longitude + crash_speed_limit +
-           onsys_fl + units_involved + road_constr_zone_fl +
-           hour + wday + month,
-  data = train
-)
 
 ## Random forest model
 model <- rand_forest(
@@ -161,25 +181,31 @@ model <- rand_forest(
 
 ## Workflow
 wf <- workflow() %>%
-  add_recipe(rec2) %>%
+  add_recipe(rec) %>%
   add_model(model)
 
 ## CV folds (not used now but not harmful)
+set.seed(123)
 folds <- vfold_cv(train, v = 10)
-
-## Load previously saved tuning results
-res2 <- readRDS("/stor/scratch/WCAAR/rhyan_scratch/rf_tuning_output/tuning_results.rds")
 
 
 ## Select the best RF hyperparameter configuration
 best_res <- select_best(res2, metric = "roc_auc")
 best_res
+=======
+rf_grid <- grid_regular(
+  mtry(range = c(2, 7)),   # Try splitting on 2 columns up to 7 columns
+  min_n(range = c(5, 40)), # Try deep trees (5) vs shallow trees (40)
+  levels = 5               # Try 5 values for each (Total = 25 combinations)
+)
 
-## Finalize workflow with optimal tuning params
-final_wf <- finalize_workflow(wf, best_res)
+tune_res <- tune_grid(
+  wf,
+  resamples = folds,
+  grid = rf_grid
+)
 
-## Fit the finalized RF to the *full training data*
-final_fit <- fit(final_wf, train)
+tune_res |> collect_metrics()
 
 preds <- predict(final_fit, test, type = "prob") %>%
   bind_cols(test)
@@ -190,6 +216,26 @@ rf_metrics <- collect_metrics(res2)
 write_csv(rf_metrics, "~/projects/Project2/rf_metrics.csv")
 
 rf_metrics
+=======
+# ## Load previously saved tuning results
+# res2 <- readRDS("/stor/scratch/WCAAR/rhyan_scratch/rf_tuning_output/tuning_results.rds")
+# 
+# ## Select the best RF hyperparameter configuration
+# best_res <- select_best(res2, metric = "roc_auc")
+# best_res
+# 
+# ## Finalize workflow with optimal tuning params
+# final_wf <- finalize_workflow(wf, best_res)
+# 
+# ## Fit the finalized RF to the *full training data*
+# final_fit <- fit(final_wf, train)
+# 
+# preds <- predict(final_fit, test, type = "prob") %>%
+#   bind_cols(test)
+# 
+# roc_auc(preds, truth = injury, .pred_injury)
+# 
+# collect_metrics(res2)
 ```
 
 Which one of your models (i.e., which combination of tuning parameters and variables) produces the best prediction performance on the training dataset?
