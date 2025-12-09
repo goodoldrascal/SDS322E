@@ -1,0 +1,4 @@
+.metric,.estimator,mean,n,std_err,.config
+accuracy,binary,0.5959823787315127,10,0.0010496888679915571,pre0_mod0_post0
+brier_class,binary,0.23271890382493432,10,3.049862803530291e-4,pre0_mod0_post0
+roc_auc,binary,0.6010446818223681,10,8.581631282866709e-4,pre0_mod0_post0

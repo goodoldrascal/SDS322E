@@ -36,6 +36,7 @@ plan(multisession, workers = 8)
 library(tidyverse)
 library(readr)
 library(tidymodels)
+library(readr)
 df <- read_csv("~/projects/Project2/Austin_Crash_Report_Data_-_Crash_Level_Records_20250407.csv.gz")
 # df <- Austin_Crash_Report_Data_._Crash_Level_Records_20250407.csv
 df <- df |> 
@@ -90,7 +91,7 @@ df <- df |>
 df_split <- initial_split(df, prop = 0.75)
 train <- training(df_split)
 test  <- testing(df_split)
-summary(train |> select(latitude, longitude, crash_speed_limit, onsys_fl, private_dr_fl))
+
 
 rec <- recipe(injury ~ latitude + longitude + crash_speed_limit + onsys_fl + units_involved  + road_constr_zone_fl + hour + wday + month, data = train)
 model <- logistic_reg() |>
@@ -106,7 +107,11 @@ res <- fit_resamples(wf, resamples = folds)
 
 
 
-res |> collect_metrics()
+log_metrics <- res |> collect_metrics()
+
+write_csv(log_metrics, "~/projects/Project2/log_metrics.csv")
+
+log_metrics
 
 ```
 
@@ -165,6 +170,7 @@ folds <- vfold_cv(train, v = 10)
 ## Load previously saved tuning results
 res2 <- readRDS("/stor/scratch/WCAAR/rhyan_scratch/rf_tuning_output/tuning_results.rds")
 
+
 ## Select the best RF hyperparameter configuration
 best_res <- select_best(res2, metric = "roc_auc")
 best_res
@@ -180,7 +186,10 @@ preds <- predict(final_fit, test, type = "prob") %>%
 
 roc_auc(preds, truth = injury, .pred_injury)
 
-collect_metrics(res2)
+rf_metrics <- collect_metrics(res2)
+write_csv(rf_metrics, "~/projects/Project2/rf_metrics.csv")
+
+rf_metrics
 ```
 
 Which one of your models (i.e., which combination of tuning parameters and variables) produces the best prediction performance on the training dataset?
@@ -195,6 +204,7 @@ Choose the model that performs the best on your training dataset (either the lin
 
 ```{r}
 ## Add your code here
+
 
 ```
 
