@@ -5,7 +5,7 @@ output: html_document
 
 ## Group Members
 
-Specify the names and EIDs of all group members: Nicholas Rhyan Ncr828, David Paul Salinas Dps2387, Kieran Givens ktg557
+Specify the names and EIDs of all group members:
 
 
 
@@ -13,7 +13,7 @@ Specify the names and EIDs of all group members: Nicholas Rhyan Ncr828, David Pa
 
 State the question being addressed and describe the outcome variable to be predicted. Explain why it is useful to answer this question.
 
-**We sought to determine whether injuries resulting from a motor vehicle crash could be predicted using variables not directly encoding injury severity or injury counts. To address this, we reframed the outcome as a binary classification problem by constructing a new indicator variable equal to TRUE if a crash involved at least one injury and FALSE if no injuries were reported. Importantly, the outcome variable was reasonably balanced: approximately 45% of crashes in the dataset involved at least one injury.**
+**Write your answer here.**
 
 
 ## Data and Setup
@@ -94,38 +94,30 @@ head(df)
 
 
 ```{r}
+library(doParallel)
 
-
+all_cores <- parallel::detectCores(logical = FALSE)
+registerDoParallel(cores = all_cores)
 
 df_split <- initial_split(df, prop = 0.75)
 train <- training(df_split)
 test  <- testing(df_split)
 
-## Recipe (cleaned: NO crash_time)
-rec <- recipe(
-  injury ~ latitude + longitude + crash_speed_limit +
-           onsys_fl + road_constr_zone_fl +
-           hour + wday + month,
-  data = train
-)
+
+rec <- recipe(injury ~ latitude + longitude + crash_speed_limit + onsys_fl + units_involved + road_constr_zone_fl + hour + wday + month, data = train)
+
 model <- logistic_reg() |>
   set_engine("glm")
 
-wf1 <- workflow() |>
+wf <- workflow() |>
   add_recipe(rec) |>
   add_model(model)
 
 folds <- vfold_cv(train, v = 10)
 
-res <- fit_resamples(wf1, resamples = folds)
+res <- fit_resamples(wf, resamples = folds)
 
-
-
-log_metrics <- res |> collect_metrics()
-
-write_csv(log_metrics, "~/projects/Project2/log_metrics.csv")
-
-log_metrics
+res |> collect_metrics()
 
 ```
 
@@ -168,7 +160,14 @@ vip(rf_fit)
 ```{r}
 library(tidymodels)
 library(ranger)
+library(doParallel)
 
+## Recipe (cleaned: NO crash_time)
+rec <- recipe(
+  injury ~ latitude + longitude + crash_speed_limit +
+           + units_involved + road_constr_zone_fl +
+           hour + wday + month, data = train
+)
 
 ## Random forest model
 model <- rand_forest(
@@ -184,19 +183,21 @@ wf <- workflow() %>%
   add_recipe(rec) %>%
   add_model(model)
 
+# 1. Turn on parallel processing
+all_cores <- parallel::detectCores(logical = FALSE)
+cl <- makePSOCKcluster(all_cores - 1)
+registerDoParallel(cl)
+
 ## CV folds (not used now but not harmful)
 set.seed(123)
 folds <- vfold_cv(train, v = 10)
 
+rf_params <- extract_parameter_set_dials(wf) %>% 
+  finalize(train)
 
-## Select the best RF hyperparameter configuration
-best_res <- select_best(res2, metric = "roc_auc")
-best_res
-=======
 rf_grid <- grid_regular(
-  mtry(range = c(2, 7)),   # Try splitting on 2 columns up to 7 columns
-  min_n(range = c(5, 40)), # Try deep trees (5) vs shallow trees (40)
-  levels = 5               # Try 5 values for each (Total = 25 combinations)
+  rf_params,
+  levels = 3
 )
 
 tune_res <- tune_grid(
@@ -205,18 +206,22 @@ tune_res <- tune_grid(
   grid = rf_grid
 )
 
-tune_res |> collect_metrics()
+# Select the best configuration from YOUR results (tune_res)
+best_res <- select_best(tune_res, metric = "roc_auc")
+print(best_res)
 
+# Update the workflow with the winning mtry and min_n
+final_wf <- finalize_workflow(wf, best_res)
+
+# Fit the finalized model to the full training data
+final_fit <- fit(final_wf, train)
+
+# --- 7. EVALUATE ON TEST SET ---
 preds <- predict(final_fit, test, type = "prob") %>%
   bind_cols(test)
 
+# Calculate final ROC AUC
 roc_auc(preds, truth = injury, .pred_injury)
-
-rf_metrics <- collect_metrics(res2)
-write_csv(rf_metrics, "~/projects/Project2/rf_metrics.csv")
-
-rf_metrics
-=======
 # ## Load previously saved tuning results
 # res2 <- readRDS("/stor/scratch/WCAAR/rhyan_scratch/rf_tuning_output/tuning_results.rds")
 # 
@@ -250,26 +255,13 @@ Choose the model that performs the best on your training dataset (either the lin
 
 ```{r}
 ## Add your code here
-glm_fit <- fit(wf1, data = train)
-pred_class <- predict(glm_fit, test, type = "class")
-pred_prob <- predict(glm_fit, test, type = "prob")
-preds <- test %>%
-  bind_cols(
-    predict(glm_fit, test, type = "prob"),
-    predict(glm_fit, test, type = "class")
-  )
-# evaluate AUC
-roc_auc(preds, truth = injury, .pred_injury)
-# evaluate accuracy
-accuracy(preds, truth = injury, .pred_class)
-
 
 ```
 
 
 What are the final performance metrics for your best model?
 
-**Evaluation of our logistic regression model showed an accuracy of .597 and an AUC of .396.**
+**Write your answer here.**
 
 
 
@@ -297,11 +289,8 @@ What have you learned from the process itself?
 
 Was there anything that was unexpected that you found during this analysis? If so, what was your expectation and how did the experience deviate from your expectation?
 
-**The biggest challenge during this project was getting the full workflow to run smoothly with a large data set. Cross-validation and parameter tuning was more computationally intense than expected. As well, feature engineering decisions were often not obvious. Many variables could be represented in multiple ways, and it wasn't clear ahead of time which choices would improve prediction performance versus adding noise.**
+**Write your answer here.**
 
-**We learned how to build models in a structured and reproducible way following a clear workflow. We also learned how integral to model performance that preprocessing choices are, handling missing values, converting variables correctly, and engineering features often mattered as much as the model choice.**
-
-**One unexpected results was that our baseline logistic regression only produced small improvements in performance when using a similar set of predictors. We expected random forest to outperform logistic regression by a wide margin, but the gain was somewhat modest, suggesting that the features may not contain the strongest signal for predicting injury.**
 
 
 
