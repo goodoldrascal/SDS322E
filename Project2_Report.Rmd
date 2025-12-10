@@ -111,13 +111,13 @@ rec <- recipe(
 model <- logistic_reg() |>
   set_engine("glm")
 
-wf <- workflow() |>
+wf1 <- workflow() |>
   add_recipe(rec) |>
   add_model(model)
 
 folds <- vfold_cv(train, v = 10)
 
-res <- fit_resamples(wf, resamples = folds)
+res <- fit_resamples(wf1, resamples = folds)
 
 
 
@@ -250,7 +250,7 @@ Choose the model that performs the best on your training dataset (either the lin
 
 ```{r}
 ## Add your code here
-glm_fit <- fit(wf, data = train)
+glm_fit <- fit(wf1, data = train)
 pred_class <- predict(glm_fit, test, type = "class")
 pred_prob <- predict(glm_fit, test, type = "prob")
 preds <- test %>%
