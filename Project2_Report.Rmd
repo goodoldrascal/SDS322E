@@ -5,7 +5,7 @@ output: html_document
 
 ## Group Members
 
-Specify the names and EIDs of all group members:
+Specify the names and EIDs of all group members: Nicholas Rhyan Ncr828, David Paul Salinas Dps2387, Kieran Givens ktg557
 
 
 
@@ -13,7 +13,7 @@ Specify the names and EIDs of all group members:
 
 State the question being addressed and describe the outcome variable to be predicted. Explain why it is useful to answer this question.
 
-**Write your answer here.**
+**We wanted to determine whether injuries resulting from a car crash could be reliably predicted from variables not directly associated injury. In order to make optimize our models performance we decided to create a new binomial variable with a value or TRUE for any nonzero injury count and FALSE for an injury count of zero. The number of injury associated crashes was highly represented in our dataset, with approximately forty-five percent of the samples with nonzero injury counts. **
 
 
 ## Data and Setup
