@@ -13,7 +13,7 @@ Specify the names and EIDs of all group members: Nicholas Rhyan Ncr828, David Pa
 
 State the question being addressed and describe the outcome variable to be predicted. Explain why it is useful to answer this question.
 
-**We wanted to determine whether injuries resulting from a car crash could be reliably predicted from variables not directly associated injury. In order to make optimize our models performance we decided to create a new binomial variable with a value or TRUE for any nonzero injury count and FALSE for an injury count of zero. The number of injury associated crashes was highly represented in our dataset, with approximately forty-five percent of the samples with nonzero injury counts. **
+**We sought to determine whether injuries resulting from a motor vehicle crash could be predicted using variables not directly encoding injury severity or injury counts. To address this, we reframed the outcome as a binary classification problem by constructing a new indicator variable equal to TRUE if a crash involved at least one injury and FALSE if no injuries were reported. Importantly, the outcome variable was reasonably balanced: approximately 45% of crashes in the dataset involved at least one injury.**
 
 
 ## Data and Setup
