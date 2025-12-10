@@ -285,8 +285,11 @@ What have you learned from the process itself?
 
 Was there anything that was unexpected that you found during this analysis? If so, what was your expectation and how did the experience deviate from your expectation?
 
-**Write your answer here.**
+**The biggest challenge during this project was getting the full workflow to run smoothly with a large data set. Cross-validation and parameter tuning was more computationally intense than expected. As well, feature engineering decisions were often not obvious. Many variables could be represented in multiple ways, and it wasn't clear ahead of time which choices would improve prediction performance versus adding noise.**
 
+**We learned how to build models in a structured and reproducible way following a clear workflow. We also learned how integral to model performance that preprocessing choices are, handling missing values, converting variables correctly, and engineering features often mattered as much as the model choice.**
+
+**One unexpected results was that our baseline logistic regression only produced small improvements in performance when using a similar set of predictors. We expected random forest to outperform logistic regression by a wide margin, but the gain was somewhat modest, suggesting that the features may not contain the strongest signal for predicting injury.**
 
 
 
