@@ -250,6 +250,18 @@ Choose the model that performs the best on your training dataset (either the lin
 
 ```{r}
 ## Add your code here
+glm_fit <- fit(wf, data = train)
+pred_class <- predict(glm_fit, test, type = "class")
+pred_prob <- predict(glm_fit, test, type = "prob")
+preds <- test %>%
+  bind_cols(
+    predict(glm_fit, test, type = "prob"),
+    predict(glm_fit, test, type = "class")
+  )
+# evaluate AUC
+roc_auc(preds, truth = injury, .pred_injury)
+# evaluate accuracy
+accuracy(preds, truth = injury, .pred_class)
 
 
 ```
@@ -257,7 +269,7 @@ Choose the model that performs the best on your training dataset (either the lin
 
 What are the final performance metrics for your best model?
 
-**Write your answer here.**
+**Evaluation of our logistic regression model showed an accuracy of .597 and an AUC of .396.**
 
 
 
